@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --brand: #06b6d4;
+  --brand-dark: #0d7377;
+  --peacock-emerald: #059669;
+  --peacock-cyan: #06b6d4;
+  --peacock-yellow: #fbbf24;
+}
+
+body {
+  background: linear-gradient(to bottom right, #f8fafc, #e0f2fe, #f0fdf4);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Peacock Color Scheme */
+.btn-primary {
+  @apply bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-emerald-500/50 transition-all hover:scale-105;
+}
+
+.btn-secondary {
+  @apply border-2 border-cyan-400 text-cyan-600 font-semibold rounded-lg hover:bg-cyan-50 transition-all;
+}
+
+.card-peacock {
+  @apply bg-white border border-emerald-200 rounded-xl shadow-sm hover:shadow-lg hover:border-cyan-300 transition-all;
+}
+
+.text-peacock-gradient {
+  @apply bg-gradient-to-r from-yellow-300 via-emerald-300 to-cyan-300 bg-clip-text text-transparent;
+}
+
+@keyframes peacock-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(6, 182, 212, 0.5);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-peacock-glow {
+  animation: peacock-glow 3s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
