@@ -39,12 +39,6 @@ export default function SiteHeader() {
               Contact
             </Link>
             <CartLink />
-            <Link
-              href="/admin/login"
-              className="hidden lg:inline text-xs text-emerald-200 hover:text-yellow-300 font-medium transition-colors"
-            >
-              Owner Login
-            </Link>
           </nav>
         </div>
         <div className="md:hidden pb-3">
