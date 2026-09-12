@@ -43,7 +43,7 @@ export default async function CategoryPage({ params }) {
               <Link
                 key={s.id}
                 href={`/category/${s.slug}`}
-                className="text-sm border border-neutral-300 rounded-full px-3 py-1 hover:border-amber-700 hover:text-amber-800"
+                className="text-sm border border-neutral-300 rounded-full px-3 py-1 hover:border-emerald-400 hover:text-emerald-700 transition-colors"
               >
                 {s.name}
               </Link>

@@ -25,7 +25,7 @@ export default async function SupplierDetailPage({ params }) {
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <div className="border border-neutral-200 rounded-lg p-6 bg-white mb-8">
           <div className="flex items-center gap-4 mb-4">
-            <div className="h-16 w-16 rounded-full bg-amber-50 flex items-center justify-center text-amber-800 font-bold text-xl">
+            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-emerald-100 to-cyan-100 flex items-center justify-center text-emerald-700 font-bold text-xl">
               {supplier.name.charAt(0)}
             </div>
             <div>

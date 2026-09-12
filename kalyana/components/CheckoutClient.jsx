@@ -65,7 +65,7 @@ export default function CheckoutClient() {
     return (
       <main className="flex-1 max-w-5xl mx-auto px-4 py-16 w-full text-center">
         <p className="text-neutral-500 mb-4">Your cart is empty.</p>
-        <Link href="/products" className="text-amber-800 font-medium hover:underline">
+        <Link href="/products" className="text-emerald-700 font-medium hover:text-cyan-600 transition-colors">
           Browse products →
         </Link>
       </main>
@@ -120,7 +120,7 @@ export default function CheckoutClient() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-amber-800 text-white font-semibold py-3 rounded-md hover:bg-amber-900 disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold py-3 rounded-lg hover:shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-50"
           >
             {submitting ? "Placing Order…" : "Place Order"}
           </button>

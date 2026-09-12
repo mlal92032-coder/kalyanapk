@@ -77,7 +77,7 @@ export default async function ProductDetailPage({ params }) {
               {product.supplier_name && (
                 <div className="text-sm text-neutral-600 mb-6">
                   Sold by{" "}
-                  <a href={`/suppliers/${product.supplier_slug}`} className="text-amber-800 font-medium hover:underline">
+                  <a href={`/suppliers/${product.supplier_slug}`} className="text-emerald-700 font-medium hover:text-cyan-600 transition-colors">
                     {product.supplier_name}
                   </a>
                   {!!product.supplier_verified && (

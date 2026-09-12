@@ -263,7 +263,7 @@ export default function ProductForm({ productId }) {
       <div className="bg-white border border-neutral-200 rounded-lg p-6 space-y-3 mb-6">
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold text-lg">Bulk Pricing Tiers</h2>
-          <button onClick={addTier} type="button" className="text-sm text-amber-800 hover:underline">
+          <button onClick={addTier} type="button" className="text-sm text-emerald-700 hover:text-cyan-600 font-medium transition-colors">
             + Add Tier
           </button>
         </div>
@@ -313,7 +313,7 @@ export default function ProductForm({ productId }) {
         <button
           onClick={() => save(true)}
           disabled={saving}
-          className="bg-amber-800 text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-amber-900 disabled:opacity-50"
+          className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-50"
         >
           {saving ? "Saving…" : "Save & Publish"}
         </button>
