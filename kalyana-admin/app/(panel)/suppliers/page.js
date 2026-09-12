@@ -101,14 +101,14 @@ export default function AdminSuppliersPage() {
           className="border border-neutral-300 rounded-md px-3 py-2 text-sm sm:col-span-2"
           rows={2}
         />
-        <button className="bg-amber-800 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-900 sm:col-span-2 w-fit">
+        <button className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/50 transition-all sm:col-span-2 w-fit">
           Add Supplier
         </button>
         {error && <div className="text-sm text-red-600 sm:col-span-2">{error}</div>}
       </form>
 
       {message && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-md px-4 py-2 mb-4">
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded-md px-4 py-2 mb-4">
           {message}
         </div>
       )}
@@ -146,7 +146,7 @@ export default function AdminSuppliersPage() {
                   </td>
                   <td className="px-4 py-3 capitalize">{s.status}</td>
                   <td className="px-4 py-3 text-right space-x-2">
-                    <button onClick={() => toggleStatus(s)} className="text-amber-800 hover:underline text-xs">
+                    <button onClick={() => toggleStatus(s)} className="text-emerald-700 hover:text-cyan-600 font-medium text-xs transition-colors">
                       {s.status === "active" ? "Suspend" : "Activate"}
                     </button>
                     <button onClick={() => deleteSupplier(s)} className="text-red-600 hover:underline text-xs">

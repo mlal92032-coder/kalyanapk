@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-neutral-950 px-4">
       <div className="w-full max-w-sm bg-white rounded-lg shadow-xl p-8">
         <div className="text-center mb-6">
-          <div className="text-2xl font-bold text-amber-800">Kalyana</div>
+          <div className="text-2xl font-bold text-transparent bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text">Kalyana</div>
           <div className="text-sm text-neutral-500">Owner C-Panel</div>
         </div>
         <form onSubmit={submit} className="space-y-4">
@@ -66,7 +66,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-amber-800 text-white font-semibold py-2.5 rounded-md hover:bg-amber-900 disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold py-2.5 rounded-lg hover:shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-50"
           >
             {loading ? "Signing in…" : "Sign In"}
           </button>

@@ -53,7 +53,7 @@ export default function AdminProductsPage() {
         <h1 className="text-2xl font-bold">Products</h1>
         <Link
           href="/products/new"
-          className="bg-amber-800 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-900"
+          className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/50 transition-all"
         >
           + Add Product
         </Link>
@@ -75,7 +75,7 @@ export default function AdminProductsPage() {
       </form>
 
       {message && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-md px-4 py-2 mb-4">
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded-md px-4 py-2 mb-4">
           {message}
         </div>
       )}
@@ -101,7 +101,7 @@ export default function AdminProductsPage() {
               products.map((p) => (
                 <tr key={p.id} className="border-t border-neutral-100">
                   <td className="px-4 py-3">
-                    <Link href={`/products/${p.id}`} className="font-medium hover:text-amber-800">
+                    <Link href={`/products/${p.id}`} className="font-medium text-slate-900 hover:text-emerald-700 transition-colors">
                       {p.name}
                     </Link>
                     <div className="text-xs text-neutral-400">{p.category_name || "Uncategorized"}</div>
@@ -125,7 +125,7 @@ export default function AdminProductsPage() {
                         Hide
                       </button>
                     )}
-                    <Link href={`/products/${p.id}`} className="text-amber-800 hover:underline text-xs">
+                    <Link href={`/products/${p.id}`} className="text-emerald-700 hover:text-cyan-600 font-medium text-xs transition-colors">
                       Edit
                     </Link>
                     <button onClick={() => deleteProduct(p.id, p.name)} className="text-red-600 hover:underline text-xs">

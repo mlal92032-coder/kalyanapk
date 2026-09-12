@@ -89,7 +89,7 @@ export default function AdminSettingsPage() {
       <button
         onClick={save}
         disabled={saving}
-        className="bg-amber-800 text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-amber-900 disabled:opacity-50"
+        className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-50"
       >
         {saving ? "Saving…" : "Save Changes"}
       </button>

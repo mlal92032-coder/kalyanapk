@@ -88,14 +88,14 @@ export default function AdminCategoriesPage() {
             ))}
           </select>
         </div>
-        <button className="bg-amber-800 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-900">
+        <button className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/50 transition-all">
           Add Category
         </button>
       </form>
 
       {error && <div className="text-sm text-red-600 mb-4">{error}</div>}
       {warning && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-md px-4 py-2 mb-4">
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-md px-4 py-2 mb-4">
           {warning}
         </div>
       )}
@@ -128,7 +128,7 @@ export default function AdminCategoriesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right space-x-2">
-                    <button onClick={() => toggleStatus(c)} className="text-amber-800 hover:underline text-xs">
+                    <button onClick={() => toggleStatus(c)} className="text-emerald-700 hover:text-cyan-600 font-medium text-xs transition-colors">
                       {c.status === "published" ? "Hide" : "Publish"}
                     </button>
                     <button onClick={() => deleteCategory(c)} className="text-red-600 hover:underline text-xs">
