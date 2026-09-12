@@ -14,17 +14,17 @@ export default function SearchBox() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex w-full">
+    <form onSubmit={onSubmit} className="flex w-full gap-0">
       <input
         type="text"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search products, categories, suppliers..."
-        className="w-full rounded-l-md border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-700/40"
+        placeholder="🔍 Search products, categories, suppliers..."
+        className="w-full rounded-l-xl border-2 border-cyan-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 bg-white text-slate-900 placeholder-slate-500"
       />
       <button
         type="submit"
-        className="rounded-r-md bg-amber-800 text-white px-4 text-sm font-medium hover:bg-amber-900"
+        className="rounded-r-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 text-sm font-bold hover:shadow-lg hover:shadow-emerald-500/50 transition-all"
       >
         Search
       </button>

@@ -24,10 +24,10 @@ export default function CartLink() {
   }, []);
 
   return (
-    <Link href="/cart" className="relative text-neutral-700 hover:text-amber-800 text-sm font-medium">
-      Cart
+    <Link href="/cart" className="relative text-cyan-100 hover:text-yellow-300 text-sm font-bold flex items-center gap-2 transition-colors">
+      🛒 Cart
       {count > 0 && (
-        <span className="absolute -top-2 -right-3 bg-amber-800 text-white text-[10px] rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+        <span className="absolute -top-3 -right-4 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-xs font-bold rounded-full h-5 min-w-5 px-1.5 flex items-center justify-center shadow-lg">
           {count}
         </span>
       )}
