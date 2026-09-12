@@ -67,12 +67,14 @@ export default function PaymentModal({ order, onClose, onPaymentSuccess }) {
         // For COD and bank, don't redirect immediately
         if (selectedGateway === 'cod' || selectedGateway === 'bank') {
           setTimeout(() => {
-            onPaymentSuccess(data);
+            const successUrl = `/payment-success/${order.id}?gateway=${selectedGateway}&transactionId=${data.payment.transactionId}&status=${data.payment.status}`;
+            window.location.href = successUrl;
           }, 3000);
         } else {
           // For online methods, process faster
           setTimeout(() => {
-            onPaymentSuccess(data);
+            const successUrl = `/payment-success/${order.id}?gateway=${selectedGateway}&transactionId=${data.payment.transactionId}&status=${data.payment.status}`;
+            window.location.href = successUrl;
           }, 2000);
         }
       }
