@@ -22,13 +22,6 @@ function getStatusColor(status) {
 
 export default function OrderConfirmationClient({ order, items }) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentCompleted, setPaymentCompleted] = useState(false);
-
-  const handlePaymentSuccess = (paymentData) => {
-    setPaymentCompleted(true);
-    setShowPaymentModal(false);
-    window.location.reload();
-  };
 
   const isPending = order.payment_status === 'pending';
 
@@ -147,7 +140,6 @@ export default function OrderConfirmationClient({ order, items }) {
         <PaymentModal
           order={order}
           onClose={() => setShowPaymentModal(false)}
-          onPaymentSuccess={handlePaymentSuccess}
         />
       )}
     </main>

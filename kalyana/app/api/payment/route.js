@@ -36,27 +36,32 @@ export async function POST(request) {
       gateway
     });
 
-    // Store payment transaction
-    const txInsert = db.prepare(
-      `INSERT INTO payment_transactions (order_id, gateway, transaction_id, amount, status, response)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    );
+    // Update order payment status based on gateway
+    let paymentStatus = 'pending';
+    let orderStatus = 'pending';
 
-    txInsert.run(
-      order.id,
-      gateway,
-      paymentResult.transactionId,
-      order.total,
-      paymentResult.status,
-      JSON.stringify(paymentResult)
-    );
-
-    // Update order payment status based on gateway response
-    if (paymentResult.success || paymentResult.status === 'success') {
-      db.prepare(
-        "UPDATE orders SET payment_status = ?, order_status = ? WHERE id = ?"
-      ).run('completed', 'confirmed', order.id);
+    if (gateway === 'jazzcash' || gateway === 'easypaisa') {
+      // Online payments complete immediately
+      paymentStatus = 'completed';
+      orderStatus = 'confirmed';
+    } else if (gateway === 'bank') {
+      // Bank transfers are pending until verified
+      paymentStatus = 'pending';
+      orderStatus = 'pending';
+    } else if (gateway === 'cod') {
+      // COD is pending until delivery
+      paymentStatus = 'pending';
+      orderStatus = 'confirmed';
     }
+
+    db.prepare(
+      "UPDATE orders SET payment_status = ?, order_status = ? WHERE id = ?"
+    ).run(paymentStatus, orderStatus, order.id);
+
+    // Store payment transaction in orders table
+    db.prepare(
+      "UPDATE orders SET payment_method = ?, transaction_id = ? WHERE id = ?"
+    ).run(gateway, paymentResult.transactionId, order.id);
 
     return NextResponse.json({
       success: true,

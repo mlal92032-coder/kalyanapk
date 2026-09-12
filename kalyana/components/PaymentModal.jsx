@@ -1,47 +1,46 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function PaymentModal({ order, onClose, onPaymentSuccess }) {
+export default function PaymentModal({ order, onClose }) {
   const [selectedGateway, setSelectedGateway] = useState("jazzcash");
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
-  const [paymentDetails, setPaymentDetails] = useState(null);
+  const [paymentStep, setPaymentStep] = useState("select"); // select, processing, success
+  const router = useRouter();
 
   const gateways = [
     {
       id: "jazzcash",
       name: "JazzCash",
       icon: "💳",
-      description: "Fast and secure payments via JazzCash",
-      color: "from-red-500 to-pink-500"
+      description: "Fast and secure payments via JazzCash"
     },
     {
       id: "easypaisa",
       name: "EasyPaisa",
       icon: "📱",
-      description: "Pay directly from your EasyPaisa account",
-      color: "from-purple-500 to-pink-500"
+      description: "Pay directly from your EasyPaisa account"
     },
     {
       id: "bank",
       name: "Bank Transfer",
       icon: "🏦",
-      description: "Transfer to our bank account",
-      color: "from-blue-500 to-cyan-500"
+      description: "Transfer to our bank account"
     },
     {
       id: "cod",
       name: "Cash on Delivery",
       icon: "💵",
-      description: "Pay cash when your order arrives",
-      color: "from-green-500 to-emerald-500"
+      description: "Pay cash when your order arrives"
     }
   ];
 
   async function handlePayment() {
     setProcessing(true);
     setError("");
+    setPaymentStep("processing");
 
     try {
       const res = await fetch("/api/payment", {
@@ -57,124 +56,52 @@ export default function PaymentModal({ order, onClose, onPaymentSuccess }) {
 
       if (!res.ok) {
         setError(data.error || "Payment failed");
+        setPaymentStep("select");
         setProcessing(false);
         return;
       }
 
-      // Store payment details for display
-      if (data.payment) {
-        setPaymentDetails(data.payment);
-        // For COD and bank, don't redirect immediately
-        if (selectedGateway === 'cod' || selectedGateway === 'bank') {
-          setTimeout(() => {
-            const successUrl = `/payment-success/${order.id}?gateway=${selectedGateway}&transactionId=${data.payment.transactionId}&status=${data.payment.status}`;
-            window.location.href = successUrl;
-          }, 3000);
-        } else {
-          // For online methods, process faster
-          setTimeout(() => {
-            const successUrl = `/payment-success/${order.id}?gateway=${selectedGateway}&transactionId=${data.payment.transactionId}&status=${data.payment.status}`;
-            window.location.href = successUrl;
-          }, 2000);
-        }
-      }
+      setPaymentStep("success");
+
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        const successUrl = `/payment-success/${order.id}?gateway=${selectedGateway}&transactionId=${data.payment.transactionId}`;
+        router.push(successUrl);
+      }, 2000);
     } catch (err) {
+      console.error("Payment error:", err);
       setError("Payment error. Please try again.");
+      setPaymentStep("select");
       setProcessing(false);
     }
   }
 
-  const gateway = gateways.find(g => g.id === selectedGateway);
-
-  // Show payment details if available
-  if (paymentDetails) {
+  if (paymentStep === "success") {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-          {selectedGateway === 'bank' && (
-            <>
-              <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6">
-                <h2 className="text-2xl font-bold mb-2">Bank Transfer Details</h2>
-                <p className="text-sm text-blue-50">Please transfer to the account below</p>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 space-y-3">
-                  <div className="space-y-1">
-                    <p className="text-xs text-slate-600 font-semibold">Bank Name</p>
-                    <p className="font-bold text-slate-900">{paymentDetails.bankDetails.bankName}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-slate-600 font-semibold">Account Title</p>
-                    <p className="font-bold text-slate-900">{paymentDetails.bankDetails.accountTitle}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-slate-600 font-semibold">Account Number</p>
-                    <p className="font-mono font-bold text-slate-900 text-lg">{paymentDetails.bankDetails.accountNumber}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-slate-600 font-semibold">IBAN</p>
-                    <p className="font-mono font-bold text-slate-900">{paymentDetails.bankDetails.iban}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-slate-600 font-semibold">Amount to Transfer</p>
-                    <p className="text-2xl font-bold text-blue-600">₨ {paymentDetails.bankDetails.amount.toLocaleString('en-PK')}</p>
-                  </div>
-                </div>
-
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-3 text-sm text-yellow-800">
-                  <p className="font-semibold mb-1">⏱️ Time Limit</p>
-                  <p>Please complete the transfer within 48 hours. Your order will be confirmed upon receipt of payment.</p>
-                </div>
-              </div>
-
-              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 space-y-2">
-                <button
-                  onClick={onClose}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold py-2 rounded-lg transition-all"
-                >
-                  I have transferred the amount
-                </button>
-              </div>
-            </>
-          )}
-
-          {selectedGateway === 'cod' && (
-            <>
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6">
-                <h2 className="text-2xl font-bold mb-2">Cash on Delivery</h2>
-                <p className="text-sm text-green-50">Payment on delivery confirmed</p>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 text-center">
-                  <p className="text-5xl mb-4">✅</p>
-                  <p className="font-bold text-slate-900 mb-2">Payment Method Confirmed</p>
-                  <p className="text-slate-600">You will pay</p>
-                  <p className="text-3xl font-bold text-emerald-600 mt-2">₨ {order.total.toLocaleString('en-PK')}</p>
-                  <p className="text-slate-600 mt-2">when your order is delivered</p>
-                </div>
-
-                <div className="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-3 text-sm text-blue-800">
-                  <p className="font-semibold mb-1">📦 What to expect</p>
-                  <p>Our delivery agent will bring your order. You can inspect it and pay with cash upon receipt.</p>
-                </div>
-              </div>
-
-              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50">
-                <button
-                  onClick={onClose}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold py-2 rounded-lg transition-all"
-                >
-                  Complete Order
-                </button>
-              </div>
-            </>
-          )}
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden text-center p-8">
+          <div className="text-6xl mb-4 animate-bounce">✅</div>
+          <h2 className="text-2xl font-bold text-emerald-700 mb-2">Payment Processing!</h2>
+          <p className="text-slate-600 mb-4">Your payment has been initiated successfully.</p>
+          <p className="text-sm text-slate-500">Redirecting to order details...</p>
         </div>
       </div>
     );
   }
+
+  if (paymentStep === "processing") {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden text-center p-8">
+          <div className="text-6xl mb-4 animate-spin">⏳</div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Processing Payment...</h2>
+          <p className="text-slate-600">Please wait while we process your payment.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const gateway = gateways.find(g => g.id === selectedGateway);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -226,7 +153,7 @@ export default function PaymentModal({ order, onClose, onPaymentSuccess }) {
 
         {/* Error Message */}
         {error && (
-          <div className="mx-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <div className="mx-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 mb-4">
             {error}
           </div>
         )}
@@ -238,7 +165,7 @@ export default function PaymentModal({ order, onClose, onPaymentSuccess }) {
             disabled={processing}
             className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold py-3 rounded-lg hover:shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {processing ? "Processing Payment…" : `Pay ₨ ${order.total.toLocaleString('en-PK')}`}
+            {processing ? "Processing..." : `Pay ₨ ${order.total.toLocaleString('en-PK')}`}
           </button>
           <button
             onClick={onClose}
