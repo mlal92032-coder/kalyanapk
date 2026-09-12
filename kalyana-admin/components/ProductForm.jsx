@@ -18,9 +18,10 @@ export default function ProductForm({ productId }) {
   const [form, setForm] = useState({
     name: "", sku: "", category_id: "", supplier_id: "",
     description: "", short_description: "",
-    base_price: "", currency: "USD", moq: 1, max_quantity: "",
+    base_price: "", currency: "PKR", moq: 1, max_quantity: "",
     stock: 0, low_stock_threshold: 10, main_image: "", status: "draft",
   });
+  const [imagePreview, setImagePreview] = useState("");
   const [tiers, setTiers] = useState([emptyTier()]);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -126,9 +127,9 @@ export default function ProductForm({ productId }) {
   if (loading) return <div className="text-neutral-500">Loading…</div>;
 
   return (
-    <div className="max-w-3xl">
-      <div className="bg-white border border-neutral-200 rounded-lg p-6 space-y-4 mb-6">
-        <h2 className="font-semibold text-lg mb-2">Product Information</h2>
+    <div className="max-w-4xl">
+      <div className="bg-white border-2 border-emerald-300 rounded-xl p-6 space-y-4 mb-6 shadow-lg hover:shadow-xl transition-all">
+        <h2 className="font-bold text-xl text-transparent bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text mb-4">📦 Product Information</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Product Name *</label>
@@ -191,18 +192,53 @@ export default function ProductForm({ productId }) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Main Image URL</label>
-          <input
-            value={form.main_image || ""}
-            onChange={(e) => updateField("main_image", e.target.value)}
-            placeholder="https://…"
-            className="w-full border border-neutral-300 rounded-md px-3 py-2 text-sm"
-          />
+          <label className="block text-sm font-bold mb-2 text-emerald-700">Product Image</label>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-2 text-slate-600">Upload Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      const base64 = reader.result;
+                      updateField("main_image", base64);
+                      setImagePreview(base64);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="w-full border-2 border-dashed border-emerald-300 rounded-lg px-3 py-4 text-sm text-slate-600 file:mr-2 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-emerald-500 file:text-white"
+              />
+            </div>
+            {(imagePreview || form.main_image) && (
+              <div>
+                <label className="block text-xs font-medium mb-2 text-slate-600">Preview</label>
+                <img
+                  src={imagePreview || form.main_image}
+                  alt="Preview"
+                  className="w-full h-40 object-cover rounded-lg border-2 border-emerald-300"
+                />
+              </div>
+            )}
+          </div>
+          <div className="mt-2">
+            <label className="block text-xs font-medium mb-2 text-slate-600">Or Image URL</label>
+            <input
+              value={form.main_image || ""}
+              onChange={(e) => updateField("main_image", e.target.value)}
+              placeholder="https://…"
+              className="w-full border border-cyan-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+            />
+          </div>
         </div>
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-lg p-6 space-y-4 mb-6">
-        <h2 className="font-semibold text-lg mb-2">Pricing & Inventory</h2>
+      <div className="bg-white border-2 border-cyan-300 rounded-xl p-6 space-y-4 mb-6 shadow-lg hover:shadow-xl transition-all">
+        <h2 className="font-bold text-xl text-transparent bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text mb-4">💵 Pricing & Inventory</h2>
         <div className="grid sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Base Price *</label>
@@ -260,64 +296,75 @@ export default function ProductForm({ productId }) {
         </div>
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-lg p-6 space-y-3 mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-lg">Bulk Pricing Tiers</h2>
-          <button onClick={addTier} type="button" className="text-sm text-amber-800 hover:underline">
+      <div className="bg-gradient-to-br from-emerald-50 to-cyan-50 border-2 border-emerald-300 rounded-lg p-6 space-y-4 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-lg text-emerald-900">💰 Bulk Pricing Tiers</h2>
+          <button onClick={addTier} type="button" className="text-sm bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold">
             + Add Tier
           </button>
         </div>
-        <p className="text-xs text-neutral-400 mb-2">
-          Leave "Max Qty" blank on the last tier for an unbounded top range (e.g. 500+).
+        <p className="text-xs text-slate-600 bg-white rounded-lg px-3 py-2 border border-emerald-200">
+          💡 Leave "Max Qty" blank on the last tier for an unbounded top range (e.g. 500+).
         </p>
         {tiers.map((tier, i) => (
-          <div key={i} className="flex items-center gap-3">
-            <input
-              type="number" placeholder="Min qty"
-              value={tier.min_qty}
-              onChange={(e) => updateTier(i, "min_qty", e.target.value)}
-              className="w-28 border border-neutral-300 rounded-md px-3 py-2 text-sm"
-            />
-            <span className="text-neutral-400">–</span>
-            <input
-              type="number" placeholder="Max qty (blank = +)"
-              value={tier.max_qty}
-              onChange={(e) => updateTier(i, "max_qty", e.target.value)}
-              className="w-40 border border-neutral-300 rounded-md px-3 py-2 text-sm"
-            />
-            <span className="text-neutral-400">→</span>
-            <input
-              type="number" step="0.01" placeholder="Price"
-              value={tier.price}
-              onChange={(e) => updateTier(i, "price", e.target.value)}
-              className="w-28 border border-neutral-300 rounded-md px-3 py-2 text-sm"
-            />
-            <button onClick={() => removeTier(i)} type="button" className="text-red-500 text-sm hover:underline">
-              Remove
-            </button>
+          <div key={i} className="bg-white border-2 border-emerald-200 rounded-lg p-4 hover:border-cyan-300 transition-all">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div>
+                <label className="text-xs text-slate-600 font-semibold block mb-1">Min Qty</label>
+                <input
+                  type="number" placeholder="e.g. 10"
+                  value={tier.min_qty}
+                  onChange={(e) => updateTier(i, "min_qty", e.target.value)}
+                  className="w-24 border-2 border-emerald-300 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
+                />
+              </div>
+              <span className="text-emerald-700 font-bold text-lg">–</span>
+              <div>
+                <label className="text-xs text-slate-600 font-semibold block mb-1">Max Qty</label>
+                <input
+                  type="number" placeholder="blank = +∞"
+                  value={tier.max_qty}
+                  onChange={(e) => updateTier(i, "max_qty", e.target.value)}
+                  className="w-28 border-2 border-emerald-300 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
+                />
+              </div>
+              <span className="text-emerald-700 font-bold text-lg">→</span>
+              <div>
+                <label className="text-xs text-slate-600 font-semibold block mb-1">Price (₨)</label>
+                <input
+                  type="number" step="0.01" placeholder="Price"
+                  value={tier.price}
+                  onChange={(e) => updateTier(i, "price", e.target.value)}
+                  className="w-28 border-2 border-emerald-300 rounded-lg px-3 py-2 text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
+                />
+              </div>
+              <button onClick={() => removeTier(i)} type="button" className="text-red-500 text-sm font-bold hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition-all mt-auto">
+                🗑️ Remove
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
-      {error && <div className="text-sm text-red-600 mb-4">{error}</div>}
-      {message && <div className="text-sm text-emerald-700 mb-4">{message}</div>}
+      {error && <div className="text-sm text-red-600 bg-red-50 border-2 border-red-300 rounded-lg px-4 py-3 mb-4 font-semibold">❌ {error}</div>}
+      {message && <div className="text-sm text-emerald-700 bg-emerald-50 border-2 border-emerald-300 rounded-lg px-4 py-3 mb-4 font-semibold">✅ {message}</div>}
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <button
           onClick={() => save(false)}
           disabled={saving}
-          className="border border-neutral-300 px-5 py-2.5 rounded-md text-sm font-medium hover:bg-neutral-50 disabled:opacity-50"
+          className="border-2 border-slate-300 text-slate-700 px-6 py-3 rounded-lg text-sm font-bold hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 transition-all"
         >
-          Save as Draft
+          📝 Save as Draft
         </button>
         <button
           onClick={() => save(true)}
           disabled={saving}
-          className="bg-amber-800 text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-amber-900 disabled:opacity-50"
+          className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 py-3 rounded-lg text-sm font-bold hover:shadow-lg hover:shadow-emerald-500/50 disabled:opacity-50 transition-all"
         >
-          {saving ? "Saving…" : "Save & Publish"}
+          {saving ? "⏳ Saving…" : "🚀 Save & Publish"}
         </button>
-        <span className="text-xs text-neutral-400 capitalize">Current status: {form.status}</span>
+        <span className="text-xs text-slate-600 capitalize font-semibold bg-slate-100 rounded-lg px-3 py-2 border border-slate-300">Status: <span className="text-emerald-700">{form.status}</span></span>
       </div>
     </div>
   );
