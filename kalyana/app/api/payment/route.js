@@ -91,20 +91,29 @@ export async function GET(request) {
     }
 
     const db = getDb();
-    const tx = db
+    const order = db
       .prepare(
-        "SELECT * FROM payment_transactions WHERE transaction_id = ? AND gateway = ?"
+        "SELECT * FROM orders WHERE transaction_id = ? AND payment_method = ?"
       )
       .get(transactionId, gateway);
 
-    if (!tx) {
+    if (!order) {
       return NextResponse.json(
         { error: "Transaction not found." },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ transaction: tx });
+    return NextResponse.json({
+      transaction: {
+        transactionId: order.transaction_id,
+        gateway: order.payment_method,
+        status: order.payment_status,
+        amount: order.total,
+        orderId: order.id,
+        orderNumber: order.order_number
+      }
+    });
   } catch (error) {
     console.error("Error fetching payment status:", error);
     return NextResponse.json(
