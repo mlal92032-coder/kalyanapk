@@ -24,8 +24,8 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="flex-1 p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="flex-1 p-8 w-full overflow-auto">
+      <div className="w-full">
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-transparent bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text mb-2">Dashboard</h1>

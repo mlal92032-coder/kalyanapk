@@ -43,7 +43,7 @@ function OrdersInner() {
   }, [status]);
 
   return (
-    <div>
+    <div className="flex-1 p-8 w-full overflow-auto">
       <h1 className="text-2xl font-bold mb-6">Orders</h1>
 
       <div className="mb-4">

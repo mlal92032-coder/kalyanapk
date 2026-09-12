@@ -63,7 +63,7 @@ export default function AdminCategoriesPage() {
   const topLevel = categories.filter((c) => !c.parent_id);
 
   return (
-    <div>
+    <div className="flex-1 p-8 w-full overflow-auto">
       <h1 className="text-2xl font-bold mb-6">Categories</h1>
 
       <form onSubmit={addCategory} className="bg-white border border-neutral-200 rounded-lg p-5 mb-6 flex items-end gap-3 flex-wrap">

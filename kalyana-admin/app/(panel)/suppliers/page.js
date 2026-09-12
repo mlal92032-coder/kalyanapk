@@ -66,7 +66,7 @@ export default function AdminSuppliersPage() {
   }
 
   return (
-    <div>
+    <div className="flex-1 p-8 w-full overflow-auto">
       <h1 className="text-2xl font-bold mb-6">Suppliers</h1>
 
       <form onSubmit={addSupplier} className="bg-white border border-neutral-200 rounded-lg p-5 mb-6 grid sm:grid-cols-2 gap-3">

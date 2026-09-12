@@ -7,9 +7,9 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 text-slate-900 font-sans">
-        <div className="flex flex-1">
+    <html lang="en" className="h-full w-full antialiased">
+      <body className="min-h-full w-full flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 text-slate-900 font-sans">
+        <div className="flex flex-1 w-full">
           {children}
         </div>
         <AdminFooter />
