@@ -22,6 +22,22 @@ export const PAYMENT_CONFIG = {
     apiUrl: 'https://easypaisa.com.pk/api/payment'
   },
 
+  // Bank Transfer Configuration
+  bank: {
+    enabled: true,
+    bankName: process.env.NEXT_PUBLIC_BANK_NAME || 'Kalyana Business Bank',
+    accountTitle: process.env.NEXT_PUBLIC_BANK_ACCOUNT_TITLE || 'Kalyana Trading (Pvt) Ltd',
+    accountNumber: process.env.NEXT_PUBLIC_BANK_ACCOUNT_NUMBER || '1234567890',
+    iban: process.env.NEXT_PUBLIC_BANK_IBAN || 'PK36ABCD0000001234567890',
+    branchCode: process.env.NEXT_PUBLIC_BANK_BRANCH_CODE || '0001'
+  },
+
+  // Cash on Delivery Configuration
+  cod: {
+    enabled: true,
+    message: 'Pay cash when your order is delivered'
+  },
+
   // Stripe Configuration (if using Stripe with PKR)
   stripe: {
     enabled: false,
@@ -47,6 +63,10 @@ export async function processPayment(paymentData) {
       return await processJazzCashPayment(amount, orderId, customerEmail);
     } else if (gateway === 'easypaisa' && PAYMENT_CONFIG.easypaisa.enabled) {
       return await processEasyPaisaPayment(amount, orderId, customerEmail);
+    } else if (gateway === 'bank' && PAYMENT_CONFIG.bank.enabled) {
+      return processBankTransfer(amount, orderId, customerEmail);
+    } else if (gateway === 'cod' && PAYMENT_CONFIG.cod.enabled) {
+      return processCashOnDelivery(amount, orderId, customerEmail);
     } else {
       throw new Error('Payment gateway not configured');
     }
@@ -81,6 +101,44 @@ async function processEasyPaisaPayment(amount, orderId, customerEmail) {
     status: 'pending',
     gateway: 'easypaisa',
     message: 'Payment initiated with EasyPaisa'
+  };
+}
+
+// Bank Transfer Payment Processing
+function processBankTransfer(amount, orderId, customerEmail) {
+  console.log('Processing bank transfer:', { amount, orderId, customerEmail });
+
+  return {
+    success: true,
+    transactionId: `BANK-${Date.now()}`,
+    status: 'pending',
+    gateway: 'bank',
+    message: 'Bank transfer details provided. Please transfer the amount within 48 hours.',
+    bankDetails: {
+      bankName: PAYMENT_CONFIG.bank.bankName,
+      accountTitle: PAYMENT_CONFIG.bank.accountTitle,
+      accountNumber: PAYMENT_CONFIG.bank.accountNumber,
+      iban: PAYMENT_CONFIG.bank.iban,
+      branchCode: PAYMENT_CONFIG.bank.branchCode,
+      amount
+    }
+  };
+}
+
+// Cash on Delivery Payment Processing
+function processCashOnDelivery(amount, orderId, customerEmail) {
+  console.log('Processing cash on delivery:', { amount, orderId, customerEmail });
+
+  return {
+    success: true,
+    transactionId: `COD-${Date.now()}`,
+    status: 'pending',
+    gateway: 'cod',
+    message: 'Your order will be paid in cash upon delivery.',
+    codDetails: {
+      amount,
+      message: PAYMENT_CONFIG.cod.message
+    }
   };
 }
 

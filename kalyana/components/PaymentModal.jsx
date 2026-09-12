@@ -6,6 +6,7 @@ export default function PaymentModal({ order, onClose, onPaymentSuccess }) {
   const [selectedGateway, setSelectedGateway] = useState("jazzcash");
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
+  const [paymentDetails, setPaymentDetails] = useState(null);
 
   const gateways = [
     {
@@ -21,6 +22,20 @@ export default function PaymentModal({ order, onClose, onPaymentSuccess }) {
       icon: "📱",
       description: "Pay directly from your EasyPaisa account",
       color: "from-purple-500 to-pink-500"
+    },
+    {
+      id: "bank",
+      name: "Bank Transfer",
+      icon: "🏦",
+      description: "Transfer to our bank account",
+      color: "from-blue-500 to-cyan-500"
+    },
+    {
+      id: "cod",
+      name: "Cash on Delivery",
+      icon: "💵",
+      description: "Pay cash when your order arrives",
+      color: "from-green-500 to-emerald-500"
     }
   ];
 
@@ -46,10 +61,21 @@ export default function PaymentModal({ order, onClose, onPaymentSuccess }) {
         return;
       }
 
-      // Simulate payment processing
-      setTimeout(() => {
-        onPaymentSuccess(data);
-      }, 2000);
+      // Store payment details for display
+      if (data.payment) {
+        setPaymentDetails(data.payment);
+        // For COD and bank, don't redirect immediately
+        if (selectedGateway === 'cod' || selectedGateway === 'bank') {
+          setTimeout(() => {
+            onPaymentSuccess(data);
+          }, 3000);
+        } else {
+          // For online methods, process faster
+          setTimeout(() => {
+            onPaymentSuccess(data);
+          }, 2000);
+        }
+      }
     } catch (err) {
       setError("Payment error. Please try again.");
       setProcessing(false);
@@ -57,6 +83,96 @@ export default function PaymentModal({ order, onClose, onPaymentSuccess }) {
   }
 
   const gateway = gateways.find(g => g.id === selectedGateway);
+
+  // Show payment details if available
+  if (paymentDetails) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+          {selectedGateway === 'bank' && (
+            <>
+              <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6">
+                <h2 className="text-2xl font-bold mb-2">Bank Transfer Details</h2>
+                <p className="text-sm text-blue-50">Please transfer to the account below</p>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 space-y-3">
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-600 font-semibold">Bank Name</p>
+                    <p className="font-bold text-slate-900">{paymentDetails.bankDetails.bankName}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-600 font-semibold">Account Title</p>
+                    <p className="font-bold text-slate-900">{paymentDetails.bankDetails.accountTitle}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-600 font-semibold">Account Number</p>
+                    <p className="font-mono font-bold text-slate-900 text-lg">{paymentDetails.bankDetails.accountNumber}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-600 font-semibold">IBAN</p>
+                    <p className="font-mono font-bold text-slate-900">{paymentDetails.bankDetails.iban}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-600 font-semibold">Amount to Transfer</p>
+                    <p className="text-2xl font-bold text-blue-600">₨ {paymentDetails.bankDetails.amount.toLocaleString('en-PK')}</p>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-3 text-sm text-yellow-800">
+                  <p className="font-semibold mb-1">⏱️ Time Limit</p>
+                  <p>Please complete the transfer within 48 hours. Your order will be confirmed upon receipt of payment.</p>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 space-y-2">
+                <button
+                  onClick={onClose}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold py-2 rounded-lg transition-all"
+                >
+                  I have transferred the amount
+                </button>
+              </div>
+            </>
+          )}
+
+          {selectedGateway === 'cod' && (
+            <>
+              <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6">
+                <h2 className="text-2xl font-bold mb-2">Cash on Delivery</h2>
+                <p className="text-sm text-green-50">Payment on delivery confirmed</p>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 text-center">
+                  <p className="text-5xl mb-4">✅</p>
+                  <p className="font-bold text-slate-900 mb-2">Payment Method Confirmed</p>
+                  <p className="text-slate-600">You will pay</p>
+                  <p className="text-3xl font-bold text-emerald-600 mt-2">₨ {order.total.toLocaleString('en-PK')}</p>
+                  <p className="text-slate-600 mt-2">when your order is delivered</p>
+                </div>
+
+                <div className="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-3 text-sm text-blue-800">
+                  <p className="font-semibold mb-1">📦 What to expect</p>
+                  <p>Our delivery agent will bring your order. You can inspect it and pay with cash upon receipt.</p>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50">
+                <button
+                  onClick={onClose}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold py-2 rounded-lg transition-all"
+                >
+                  Complete Order
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
