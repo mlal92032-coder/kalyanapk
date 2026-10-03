@@ -15,7 +15,11 @@ export default function CheckoutClient() {
     customer_email: "",
     customer_phone: "",
     shipping_address: "",
+    payment_method: "cod",
+    transaction_id: "",
+    payment_screenshot_url: "",
   });
+  const [screenshot, setScreenshot] = useState(null);
 
   useEffect(() => {
     fetch("/api/cart")
@@ -28,6 +32,18 @@ export default function CheckoutClient() {
 
   function updateField(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function handleScreenshot(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target.result;
+      setScreenshot(base64);
+      setForm((f) => ({ ...f, payment_screenshot_url: base64 }));
+    };
+    reader.readAsDataURL(file);
   }
 
   async function submit(e) {
@@ -115,6 +131,57 @@ export default function CheckoutClient() {
             />
           </div>
 
+          <div className="pt-4 border-t border-neutral-200">
+            <label className="block text-sm font-medium mb-3">Payment Method</label>
+            <div className="space-y-2">
+              {["cod", "easypaisa", "jazzcash", "bank"].map((method) => (
+                <label key={method} className="flex items-center">
+                  <input
+                    type="radio"
+                    name="payment_method"
+                    value={method}
+                    checked={form.payment_method === method}
+                    onChange={(e) => updateField("payment_method", e.target.value)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm capitalize">
+                    {method === "cod" ? "Cash on Delivery" : method === "easypaisa" ? "Easypaisa" : method === "jazzcash" ? "JazzCash" : "Bank Transfer"}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {form.payment_method !== "cod" && (
+            <div className="space-y-3 p-3 bg-blue-50 rounded-md border border-blue-200">
+              <div>
+                <label className="block text-sm font-medium mb-1">Transaction ID</label>
+                <input
+                  required
+                  value={form.transaction_id}
+                  onChange={(e) => updateField("transaction_id", e.target.value)}
+                  placeholder="Enter transaction ID or reference number"
+                  className="w-full border border-neutral-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Payment Screenshot</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleScreenshot}
+                  required
+                  className="w-full border border-neutral-300 rounded-md px-3 py-2 text-sm"
+                />
+                {screenshot && (
+                  <div className="mt-2 border border-neutral-200 rounded-md overflow-hidden max-w-xs">
+                    <img src={screenshot} alt="Payment screenshot" className="w-full" />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {error && <div className="text-sm text-red-600">{error}</div>}
 
           <button
@@ -129,14 +196,27 @@ export default function CheckoutClient() {
         <div className="border border-neutral-200 rounded-lg p-5 bg-white h-fit">
           <div className="text-sm font-semibold mb-3">Order Summary</div>
           <div className="space-y-2 mb-4">
-            {cart.items.map((item) => (
-              <div key={item.productId} className="flex justify-between text-sm">
-                <span className="text-neutral-600">
-                  {item.name} × {item.quantity}
-                </span>
-                <span className="font-medium">${item.lineTotal.toFixed(2)}</span>
-              </div>
-            ))}
+            {cart.items.map((item) => {
+              const itemKey = item.variantId ? `${item.productId}-${item.variantId}` : item.productId;
+              return (
+                <div key={itemKey} className="text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-600">
+                      {item.name} × {item.quantity}
+                    </span>
+                    <span className="font-medium">${item.lineTotal.toFixed(2)}</span>
+                  </div>
+                  {/* Display variant details if available */}
+                  {(item.colorName || item.sizeName) && (
+                    <div className="text-xs text-neutral-500 mt-1">
+                      {item.colorName && <span>{item.colorName}</span>}
+                      {item.colorName && item.sizeName && <span> • </span>}
+                      {item.sizeName && <span>{item.sizeName}</span>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <div className="border-t border-neutral-100 pt-3 space-y-1 text-sm">
             <div className="flex justify-between">

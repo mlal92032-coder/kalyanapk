@@ -38,19 +38,26 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const body = await request.json().catch(() => ({}));
-  const {
-    name, sku, category_id, supplier_id, description, short_description,
-    base_price, currency, moq, max_quantity, stock, low_stock_threshold,
-    main_image, images, status, bulk_pricing,
-  } = body;
+  try {
+    const body = await request.json().catch(() => ({}));
+    const {
+      name, sku, category_id, supplier_id, description, short_description,
+      base_price, currency, moq, max_quantity, stock, low_stock_threshold,
+      main_image, images, status, bulk_pricing,
+    } = body;
 
-  if (!name || !name.trim()) {
-    return NextResponse.json({ error: "Product name is required." }, { status: 400 });
-  }
-  if (base_price === undefined || base_price === null || isNaN(Number(base_price))) {
-    return NextResponse.json({ error: "A valid base price is required." }, { status: 400 });
-  }
+    console.log("[API] POST /api/products - Received request");
+    console.log(`[API] Name: ${name}, SKU: ${sku}, Base Price: ${base_price}`);
+    console.log(`[API] Image size: ${main_image ? main_image.length : 0} chars`);
+
+    if (!name || !name.trim()) {
+      console.log("[API] Error: Product name is required");
+      return NextResponse.json({ error: "Product name is required." }, { status: 400 });
+    }
+    if (base_price === undefined || base_price === null || isNaN(Number(base_price))) {
+      console.log("[API] Error: A valid base price is required");
+      return NextResponse.json({ error: "A valid base price is required." }, { status: 400 });
+    }
 
   const db = getDb();
   let slug = slugify(name);
@@ -84,8 +91,10 @@ export async function POST(request) {
   });
 
   const productId = result.lastInsertRowid;
+  console.log(`[API] Product inserted with ID: ${productId}`);
 
   if (Array.isArray(bulk_pricing) && bulk_pricing.length) {
+    console.log(`[API] Inserting ${bulk_pricing.length} bulk pricing tiers`);
     const insertTier = db.prepare(
       "INSERT INTO bulk_pricing (product_id, min_qty, max_qty, price) VALUES (?, ?, ?, ?)"
     );
@@ -98,5 +107,12 @@ export async function POST(request) {
   logActivity({ action: "CREATE_PRODUCT", entityType: "product", entityId: productId, details: { name, status } });
 
   const product = db.prepare("SELECT * FROM products WHERE id = ?").get(productId);
+  console.log(`[API] Fetching product ${productId} for response`);
+  console.log(`[API] Returning product: name=${product?.name}, id=${product?.id}, slug=${product?.slug}`);
   return NextResponse.json({ product }, { status: 201 });
+  } catch (error) {
+    console.error("[API] ERROR in POST /api/products:", error.message);
+    console.error(error.stack);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

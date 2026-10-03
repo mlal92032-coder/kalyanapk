@@ -9,7 +9,7 @@ function emptyTier() {
   return { min_qty: "", max_qty: "", price: "" };
 }
 
-export default function ProductForm({ productId }) {
+export default function ProductForm({ productId, onProductCreated }) {
   const router = useRouter();
   const isEdit = !!productId;
 
@@ -29,24 +29,65 @@ export default function ProductForm({ productId }) {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    fetch("/api/categories").then((r) => r.json()).then((d) => setCategories(d.categories || []));
-    fetch("/api/suppliers").then((r) => r.json()).then((d) => setSuppliers(d.suppliers || []));
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then((d) => {
+        console.log("[Form] Loaded categories:", d.categories?.length || 0);
+        setCategories(d.categories || []);
+      })
+      .catch((err) => {
+        console.error("[Form] Failed to load categories:", err);
+        setError("Could not load categories");
+      });
+
+    fetch("/api/suppliers")
+      .then((r) => r.json())
+      .then((d) => {
+        console.log("[Form] Loaded suppliers:", d.suppliers?.length || 0);
+        setSuppliers(d.suppliers || []);
+      })
+      .catch((err) => {
+        console.error("[Form] Failed to load suppliers:", err);
+        setError("Could not load suppliers");
+      });
   }, []);
 
   useEffect(() => {
     if (!isEdit) return;
+    console.log("[Form] Loading product ID:", productId);
+
     fetch(`/api/products/${productId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.product) {
-          setForm({
-            ...data.product,
-            category_id: data.product.category_id || "",
-            supplier_id: data.product.supplier_id || "",
-            max_quantity: data.product.max_quantity || "",
-          });
+      .then((r) => {
+        console.log("[Form] Fetch response status:", r.status);
+        if (!r.ok) {
+          throw new Error(`API returned ${r.status}`);
         }
+        return r.json();
+      })
+      .then((data) => {
+        console.log("[Form] Fetched product data:", data);
+        if (data.error) {
+          console.error("[Form] API returned error:", data.error);
+          setError(data.error);
+          setLoading(false);
+          return;
+        }
+        if (!data.product) {
+          console.error("[Form] No product in response");
+          setError("Product data is missing");
+          setLoading(false);
+          return;
+        }
+        console.log("[Form] Loaded product:", data.product.name);
+        setForm({
+          ...data.product,
+          category_id: data.product.category_id || "",
+          supplier_id: data.product.supplier_id || "",
+          max_quantity: data.product.max_quantity || "",
+        });
+
         if (data.bulk_pricing?.length) {
+          console.log("[Form] Loaded bulk pricing tiers:", data.bulk_pricing.length);
           setTiers(
             data.bulk_pricing.map((t) => ({
               min_qty: t.min_qty,
@@ -55,6 +96,11 @@ export default function ProductForm({ productId }) {
             }))
           );
         }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("[Form] Failed to load product:", err);
+        setError(`Failed to load product: ${err.message}`);
         setLoading(false);
       });
   }, [isEdit, productId]);
@@ -100,24 +146,60 @@ export default function ProductForm({ productId }) {
     };
 
     try {
-      const res = await fetch(isEdit ? `/api/products/${productId}` : "/api/products", {
-        method: isEdit ? "PATCH" : "POST",
+      const url = isEdit ? `/api/products/${productId}` : "/api/products";
+      const method = isEdit ? "PATCH" : "POST";
+      console.log(`[Form] Sending ${method} request to ${url}`);
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
+      console.log(`[Form] Response status: ${res.status} (${res.ok ? 'OK' : 'ERROR'})`);
       const data = await res.json();
+      console.log(`[Form] Response data:`, data);
+
       if (!res.ok) {
-        setError(data.error || "Could not save product.");
+        const errorMsg = data.error || "Could not save product.";
+        console.error(`[Form] API returned error: ${errorMsg}`);
+        setError(errorMsg);
         setSaving(false);
         return;
       }
+
       if (!isEdit) {
-        router.push(`/products/${data.product.id}`);
+        console.log(`[Form] Product created with ID: ${data.product?.id}`);
+        console.log(`[Form] Product from API:`, data.product);
+        if (!data.product || !data.product.id) {
+          console.error("[Form] ERROR: Product ID is missing from response!");
+          setError("Error: Product was created but couldn't get ID");
+          setSaving(false);
+          return;
+        }
+
+        // If callback provided, call it (for new product page with inline variants)
+        if (onProductCreated) {
+          onProductCreated(data.product.id);
+          setMessage("✅ Product created! Now add colors, sizes, and variants below.");
+        } else {
+          // Otherwise navigate to edit page (for regular product creation)
+          try {
+            router.push(`/products/${data.product.id}`);
+            console.log("[Form] Navigation successful");
+          } catch (err) {
+            console.error("[Form] Navigation failed:", err);
+            setError(`Navigation error: ${err.message}`);
+            setSaving(false);
+          }
+        }
       } else {
-        setMessage("Saved.");
+        console.log("[Form] Updated product successfully");
+        setMessage("✅ Saved successfully!");
         setForm((f) => ({ ...f, status: data.product.status }));
       }
-    } catch {
+    } catch (err) {
+      console.error("[Form] Network error:", err);
       setError("Network error while saving.");
     } finally {
       setSaving(false);
@@ -128,8 +210,7 @@ export default function ProductForm({ productId }) {
 
   return (
     <div className="max-w-4xl">
-      <div className="bg-white border-2 border-emerald-300 rounded-xl p-6 space-y-4 mb-6 shadow-lg hover:shadow-xl transition-all">
-        <h2 className="font-bold text-xl text-transparent bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text mb-4">📦 Product Information</h2>
+      <div className="space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Product Name *</label>
@@ -296,7 +377,7 @@ export default function ProductForm({ productId }) {
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-emerald-50 to-cyan-50 border-2 border-emerald-300 rounded-lg p-6 space-y-4 mb-6">
+      <div className="bg-gradient-to-br from-emerald-50 to-cyan-50 border-2 border-emerald-300 rounded-lg p-6 space-y-4 mb-6 mt-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-lg text-emerald-900">💰 Bulk Pricing Tiers</h2>
           <button onClick={addTier} type="button" className="text-sm bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold">

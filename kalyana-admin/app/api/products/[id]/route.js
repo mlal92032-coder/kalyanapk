@@ -4,14 +4,29 @@ import { logActivity } from "@/lib/activity";
 import { getAdminSession } from "@/lib/auth";
 
 export async function GET(request, { params }) {
-  const { id } = await params;
-  const db = getDb();
-  const product = db.prepare("SELECT * FROM products WHERE id = ?").get(id);
-  if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  const bulk_pricing = db
-    .prepare("SELECT * FROM bulk_pricing WHERE product_id = ? ORDER BY min_qty ASC")
-    .all(id);
-  return NextResponse.json({ product, bulk_pricing });
+  try {
+    const { id } = await params;
+    console.log(`[API] GET /api/products/${id}`);
+
+    const db = getDb();
+    const product = db.prepare("SELECT * FROM products WHERE id = ?").get(id);
+
+    if (!product) {
+      console.log(`[API] Product ${id} not found`);
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    console.log(`[API] Found product: ${product.name} (ID: ${id})`);
+    const bulk_pricing = db
+      .prepare("SELECT * FROM bulk_pricing WHERE product_id = ? ORDER BY min_qty ASC")
+      .all(id);
+
+    console.log(`[API] Found ${bulk_pricing.length} bulk pricing tiers`);
+    return NextResponse.json({ product, bulk_pricing });
+  } catch (error) {
+    console.error(`[API] Error in GET /api/products/[id]:`, error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function PATCH(request, { params }) {

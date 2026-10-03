@@ -4,6 +4,10 @@ import { getBulkTiers } from "@/lib/pricing";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ProductPurchasePanel from "@/components/ProductPurchasePanel";
+import ProductVariantSelector from "@/components/ProductVariantSelector";
+import ReviewsSummary from "@/components/ReviewsSummary";
+import ReviewsList from "@/components/ReviewsList";
+import ProductReviewsClient from "@/components/ProductReviewsClient";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +28,20 @@ export default async function ProductDetailPage({ params }) {
     .get(slug);
 
   if (!product) notFound();
+
+  // Fetch all variants with their color and size details
+  const variants = db
+    .prepare(
+      `SELECT
+         v.id, v.product_id, v.color_id, v.size_id, v.sku, v.stock, v.price_override,
+         c.color_name, c.color_hex, s.size_name
+       FROM product_variants v
+       LEFT JOIN product_colors c ON v.color_id = c.id
+       LEFT JOIN product_sizes s ON v.size_id = s.id
+       WHERE v.product_id = ? AND v.status = 'active'
+       ORDER BY c.color_name, s.size_name`
+    )
+    .all(product.id);
 
   const bulkPricing = getBulkTiers(product.id);
   const images = JSON.parse(product.images || "[]");
@@ -91,7 +109,15 @@ export default async function ProductDetailPage({ params }) {
                 </div>
               )}
 
-              <ProductPurchasePanel product={product} bulkPricing={bulkPricing} />
+              {variants.length > 0 ? (
+                <ProductVariantSelector
+                  product={product}
+                  variants={variants}
+                  bulkPricing={bulkPricing}
+                />
+              ) : (
+                <ProductPurchasePanel product={product} bulkPricing={bulkPricing} />
+              )}
             </div>
           </div>
 
@@ -101,6 +127,10 @@ export default async function ProductDetailPage({ params }) {
               <p className="text-neutral-700 whitespace-pre-line">{product.description}</p>
             </div>
           )}
+
+          <div className="mt-20 border-t-4 border-neutral-200 pt-12">
+            <ProductReviewsClient productId={product.id} />
+          </div>
         </div>
       </main>
       <SiteFooter />

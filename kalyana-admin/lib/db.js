@@ -169,6 +169,77 @@ function init(db) {
       details TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS product_colors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      color_name TEXT NOT NULL,
+      color_hex TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS product_sizes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      size_name TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS product_variants (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      color_id INTEGER,
+      size_id INTEGER,
+      sku TEXT UNIQUE,
+      stock INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+      FOREIGN KEY (color_id) REFERENCES product_colors(id) ON DELETE SET NULL,
+      FOREIGN KEY (size_id) REFERENCES product_sizes(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS product_reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      order_id INTEGER,
+      customer_name TEXT NOT NULL,
+      customer_email TEXT NOT NULL,
+      rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending', -- pending | approved | rejected
+      helpful_count INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      approved_at TEXT,
+      rejected_reason TEXT,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS review_likes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      review_id INTEGER NOT NULL,
+      session_id TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (review_id) REFERENCES product_reviews(id) ON DELETE CASCADE,
+      UNIQUE(review_id, session_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS banners (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      image_url TEXT NOT NULL,
+      link_url TEXT,
+      position INTEGER DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'active', -- active | inactive
+      start_date TEXT,
+      end_date TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   seed(db);
@@ -198,10 +269,10 @@ function seed(db) {
 
   const adminCount = db.prepare("SELECT COUNT(*) as c FROM admin_users").get().c;
   if (adminCount === 0) {
-    const hash = bcrypt.hashSync("Kalyana@123", 10);
+    const hash = bcrypt.hashSync("kirshin123", 10);
     db.prepare(
       "INSERT INTO admin_users (name, email, password_hash, role) VALUES (?, ?, ?, ?)"
-    ).run("Owner", "owner@kalyana.test", hash, "owner");
+    ).run("Admin", "info.kalyanapk@gmail.com", hash, "owner");
   }
 
   const catCount = db.prepare("SELECT COUNT(*) as c FROM categories").get().c;

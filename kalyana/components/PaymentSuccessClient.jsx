@@ -1,10 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function PaymentSuccessClient({ order, items, payment }) {
   const [showInvoice, setShowInvoice] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "kalyana_last_order",
+      JSON.stringify({
+        orderId: order.id,
+        orderNumber: order.order_number,
+        customerName: order.customer_name,
+        customerEmail: order.customer_email,
+        completedAt: new Date().toISOString(),
+      })
+    );
+  }, [order]);
 
   const formatPKR = (amount) => {
     return `₨ ${parseFloat(amount).toLocaleString('en-PK', {

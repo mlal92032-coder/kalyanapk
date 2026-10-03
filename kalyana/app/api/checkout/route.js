@@ -3,6 +3,7 @@ import getDb from "@/lib/db";
 import { getOrCreateCartId, attachCartCookie } from "@/lib/cart";
 import { priceLines } from "@/lib/pricing";
 import { logActivity } from "@/lib/activity";
+import { saveBase64Image, isBase64 } from "@/lib/fileStorage";
 
 const SHIPPING_FLAT_FEE = 15;
 const TAX_RATE = 0; // configurable in a real deployment via Settings
@@ -16,7 +17,15 @@ function generateOrderNumber() {
 
 export async function POST(request) {
   const body = await request.json().catch(() => ({}));
-  const { customer_name, customer_email, customer_phone, shipping_address } = body;
+  const {
+    customer_name,
+    customer_email,
+    customer_phone,
+    shipping_address,
+    payment_method,
+    transaction_id,
+    payment_screenshot_url,
+  } = body;
 
   if (!customer_name || !customer_email || !shipping_address) {
     return NextResponse.json(
@@ -25,11 +34,63 @@ export async function POST(request) {
     );
   }
 
+  // Validate payment information
+  if (!payment_method) {
+    return NextResponse.json(
+      { error: "Payment method is required." },
+      { status: 400 }
+    );
+  }
+
+  const validPaymentMethods = ["easypaisa", "jazzcash", "bank", "cod"];
+  if (!validPaymentMethods.includes(payment_method)) {
+    return NextResponse.json(
+      { error: "Invalid payment method." },
+      { status: 400 }
+    );
+  }
+
+  // For manual payment methods, transaction ID and screenshot are required
+  if (["easypaisa", "jazzcash", "bank"].includes(payment_method)) {
+    if (!transaction_id || !transaction_id.trim()) {
+      return NextResponse.json(
+        { error: "Transaction ID is required for this payment method." },
+        { status: 400 }
+      );
+    }
+    if (!payment_screenshot_url) {
+      return NextResponse.json(
+        { error: "Payment screenshot is required for this payment method." },
+        { status: 400 }
+      );
+    }
+  }
+
+  // Convert Base64 screenshot to file if needed
+  let screenshotUrl = payment_screenshot_url;
+  if (payment_screenshot_url && isBase64(payment_screenshot_url)) {
+    try {
+      screenshotUrl = saveBase64Image(payment_screenshot_url, `payment-${Date.now()}.jpg`);
+    } catch (err) {
+      console.error("[Checkout] Error saving screenshot:", err.message);
+      // Fall back to storing Base64 if file save fails
+      screenshotUrl = payment_screenshot_url;
+    }
+  }
+
   const db = getDb();
   const { cartId, sid } = await getOrCreateCartId();
 
   const cartItems = db
-    .prepare("SELECT product_id as productId, quantity FROM cart_items WHERE cart_id = ?")
+    .prepare(`
+      SELECT
+        product_id as productId,
+        variant_id as variantId,
+        color_name as colorName,
+        size_name as sizeName,
+        quantity
+      FROM cart_items WHERE cart_id = ?
+    `)
     .all(cartId);
 
   if (!cartItems.length) {
@@ -65,20 +126,40 @@ export async function POST(request) {
     const orderResult = db
       .prepare(
         `INSERT INTO orders (order_number, customer_name, customer_email, customer_phone, shipping_address,
-          subtotal, shipping_fee, tax, discount, total, payment_status, order_status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending')`
+          subtotal, shipping_fee, tax, discount, total, payment_method, transaction_id, payment_screenshot_url,
+          payment_status, order_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_verification', 'pending')`
       )
-      .run(orderNumber, customer_name, customer_email, customer_phone || null, shipping_address,
-        subtotal, shippingFee, tax, discount, total);
+      .run(
+        orderNumber,
+        customer_name,
+        customer_email,
+        customer_phone || null,
+        shipping_address,
+        subtotal,
+        shippingFee,
+        tax,
+        discount,
+        total,
+        payment_method,
+        transaction_id || null,
+        screenshotUrl || null
+      );
 
     const orderId = orderResult.lastInsertRowid;
 
     const insertItem = db.prepare(
-      `INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price, line_total)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO order_items (
+        order_id, product_id, product_name, quantity, unit_price, line_total,
+        variant_id, color_name, size_name, variant_sku
+      )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
     const decrementStock = db.prepare(
       "UPDATE products SET stock = stock - ? WHERE id = ?"
+    );
+    const decrementVariantStock = db.prepare(
+      "UPDATE product_variants SET stock = stock - ? WHERE id = ?"
     );
     const logInventory = db.prepare(
       `INSERT INTO inventory_logs (product_id, previous_qty, new_qty, reason, admin_email)
@@ -86,9 +167,32 @@ export async function POST(request) {
     );
 
     for (const line of lines) {
-      insertItem.run(orderId, line.productId, line.name, line.quantity, line.unitPrice, line.lineTotal);
+      insertItem.run(
+        orderId,
+        line.productId,
+        line.name,
+        line.quantity,
+        line.unitPrice,
+        line.lineTotal,
+        line.variantId || null,
+        line.colorName || null,
+        line.sizeName || null,
+        line.sku || null
+      );
+
+      // Decrement both product and variant stock if variant exists
       decrementStock.run(line.quantity, line.productId);
-      logInventory.run(line.productId, line.stock, line.stock - line.quantity, `Order ${orderNumber}`, "system");
+      if (line.variantId) {
+        decrementVariantStock.run(line.quantity, line.variantId);
+      }
+
+      logInventory.run(
+        line.productId,
+        line.stock,
+        line.stock - line.quantity,
+        `Order ${orderNumber}`,
+        "system"
+      );
     }
 
     db.prepare("DELETE FROM cart_items WHERE cart_id = ?").run(cartId);

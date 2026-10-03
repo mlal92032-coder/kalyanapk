@@ -5,6 +5,7 @@ import { getBulkTiers } from "@/lib/pricing";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ProductCard from "@/components/ProductCard";
+import BannerCarousel from "@/components/BannerCarousel";
 
 export const dynamic = "force-dynamic";
 
@@ -86,6 +87,9 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* Promotional Banners */}
+        <BannerCarousel />
 
         {/* Categories */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">

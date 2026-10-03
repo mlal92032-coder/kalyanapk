@@ -27,21 +27,38 @@ export default function CartClient() {
     load();
   }, []);
 
-  async function updateQuantity(productId, quantity) {
-    setUpdating(productId);
+  async function updateQuantity(itemKey, quantity) {
+    setUpdating(itemKey);
+    const [productIdStr, variantIdStr] = itemKey.split('-');
+    const productId = parseInt(productIdStr, 10);
+    const variantId = variantIdStr ? parseInt(variantIdStr, 10) : null;
+
     await fetch("/api/cart", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, quantity: Math.max(1, quantity) }),
+      body: JSON.stringify({
+        productId,
+        quantity: Math.max(1, quantity),
+        variantId: variantId || null
+      }),
     });
     await load();
     window.dispatchEvent(new Event("kalyana:cart-updated"));
     setUpdating(null);
   }
 
-  async function removeItem(productId) {
-    setUpdating(productId);
-    await fetch(`/api/cart?productId=${productId}`, { method: "DELETE" });
+  async function removeItem(itemKey) {
+    setUpdating(itemKey);
+    const [productIdStr, variantIdStr] = itemKey.split('-');
+    const productId = parseInt(productIdStr, 10);
+    const variantId = variantIdStr ? parseInt(variantIdStr, 10) : null;
+
+    let url = `/api/cart?productId=${productId}`;
+    if (variantId) {
+      url += `&variantId=${variantId}`;
+    }
+
+    await fetch(url, { method: "DELETE" });
     await load();
     window.dispatchEvent(new Event("kalyana:cart-updated"));
     setUpdating(null);
@@ -69,48 +86,61 @@ export default function CartClient() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            {cart.items.map((item) => (
-              <div
-                key={item.productId}
-                className="flex items-center justify-between border-2 border-emerald-200 rounded-2xl p-5 bg-white hover:border-cyan-300 hover:shadow-lg transition-all"
-              >
-                <div className="flex-1">
-                  <Link href={`/products/${item.slug}`} className="font-bold text-slate-900 hover:text-emerald-700 block">
-                    {item.name}
-                  </Link>
-                  <div className="text-sm text-slate-600 mt-2 bg-emerald-50 rounded-lg px-3 py-1 inline-block">
-                    {formatPKR(item.unitPrice)} / piece · MOQ {item.moq}
+            {cart.items.map((item) => {
+              const itemKey = item.variantId ? `${item.productId}-${item.variantId}` : item.productId;
+              return (
+                <div
+                  key={itemKey}
+                  className="flex items-center justify-between border-2 border-emerald-200 rounded-2xl p-5 bg-white hover:border-cyan-300 hover:shadow-lg transition-all"
+                >
+                  <div className="flex-1">
+                    <Link href={`/products/${item.slug}`} className="font-bold text-slate-900 hover:text-emerald-700 block">
+                      {item.name}
+                    </Link>
+                    <div className="text-sm text-slate-600 mt-2 space-y-1">
+                      <div className="bg-emerald-50 rounded-lg px-3 py-1 inline-block">
+                        {formatPKR(item.unitPrice)} / piece · MOQ {item.moq}
+                      </div>
+                      {/* Display variant details if available */}
+                      {(item.colorName || item.sizeName) && (
+                        <div className="bg-cyan-50 rounded-lg px-3 py-1 inline-block ml-2">
+                          {item.colorName && <span className="font-semibold">{item.colorName}</span>}
+                          {item.colorName && item.sizeName && <span className="mx-1">•</span>}
+                          {item.sizeName && <span className="font-semibold">{item.sizeName}</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <label className="text-xs text-slate-600 font-semibold block mb-1">Qty</label>
+                      <input
+                        type="number"
+                        min={1}
+                        defaultValue={item.quantity}
+                        disabled={updating === itemKey}
+                        onBlur={(e) => {
+                          const qty = parseInt(e.target.value, 10) || 1;
+                          if (qty !== item.quantity) updateQuantity(itemKey, qty);
+                        }}
+                        className="w-16 border-2 border-emerald-300 rounded-lg px-2 py-2 text-sm text-center font-bold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
+                      />
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-600 font-semibold">Total</p>
+                      <p className="text-lg font-bold text-emerald-700">{formatPKR(item.lineTotal)}</p>
+                    </div>
+                    <button
+                      onClick={() => removeItem(itemKey)}
+                      disabled={updating === itemKey}
+                      className="text-red-500 hover:text-red-700 font-bold text-lg hover:bg-red-50 rounded-lg px-3 py-2 transition-all"
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <label className="text-xs text-slate-600 font-semibold block mb-1">Qty</label>
-                    <input
-                      type="number"
-                      min={1}
-                      defaultValue={item.quantity}
-                      disabled={updating === item.productId}
-                      onBlur={(e) => {
-                        const qty = parseInt(e.target.value, 10) || 1;
-                        if (qty !== item.quantity) updateQuantity(item.productId, qty);
-                      }}
-                      className="w-16 border-2 border-emerald-300 rounded-lg px-2 py-2 text-sm text-center font-bold focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
-                    />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-slate-600 font-semibold">Total</p>
-                    <p className="text-lg font-bold text-emerald-700">{formatPKR(item.lineTotal)}</p>
-                  </div>
-                  <button
-                    onClick={() => removeItem(item.productId)}
-                    disabled={updating === item.productId}
-                    className="text-red-500 hover:text-red-700 font-bold text-lg hover:bg-red-50 rounded-lg px-3 py-2 transition-all"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Order Summary */}

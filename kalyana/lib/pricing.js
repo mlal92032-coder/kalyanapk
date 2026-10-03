@@ -47,8 +47,8 @@ export function getBulkTiers(productId) {
 }
 
 /**
- * Computes a full priced quote for a set of {productId, quantity} lines
- * by re-reading the product + tiers from the DB. Used by cart display,
+ * Computes a full priced quote for a set of {productId, variantId, quantity} lines
+ * by re-reading the product + variant + tiers from the DB. Used by cart display,
  * checkout, and order creation so the server always owns the numbers.
  */
 export function priceLines(lines) {
@@ -64,19 +64,49 @@ export function priceLines(lines) {
     if (product.status !== "published") continue;
 
     const quantity = Math.max(1, parseInt(line.quantity, 10) || 1);
+
+    // Get variant details if available
+    let variantStock = product.stock;
+    let variantSku = product.sku;
+    let colorName = line.colorName || null;
+    let sizeName = line.sizeName || null;
+
+    if (line.variantId) {
+      const variant = db
+        .prepare(`
+          SELECT pv.stock, pv.sku, pc.color_name, ps.size_name
+          FROM product_variants pv
+          LEFT JOIN product_colors pc ON pv.color_id = pc.id
+          LEFT JOIN product_sizes ps ON pv.size_id = ps.id
+          WHERE pv.id = ? AND pv.product_id = ?
+        `)
+        .get(line.variantId, line.productId);
+
+      if (variant) {
+        variantStock = variant.stock;
+        if (variant.sku) variantSku = variant.sku;
+        colorName = variant.color_name;
+        sizeName = variant.size_name;
+      }
+    }
+
     const unitPrice = resolveUnitPrice(product, quantity);
     const lineTotal = Math.round(unitPrice * quantity * 100) / 100;
     subtotal += lineTotal;
 
     priced.push({
       productId: product.id,
+      variantId: line.variantId || null,
       name: product.name,
       slug: product.slug,
       quantity,
       unitPrice,
       lineTotal,
       moq: product.moq,
-      stock: product.stock,
+      stock: variantStock,
+      sku: variantSku,
+      colorName,
+      sizeName,
     });
   }
 
